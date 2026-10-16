@@ -4,6 +4,8 @@ transit()  plots one light curve from one parameter set.
 compare()  plots the light curves of every WASP-12 b parameter set in the
            NASA Exoplanet Archive that batman can use, with 1 sigma errors
            propagated from each paper's published uncertainties.
+period_history()  plots every archive period against its publication date,
+           which shows the orbit of WASP-12 b getting shorter.
 
 Parameters: Kokori et al. 2023, ApJS 265, 4 (NASA Exoplanet Archive).
 Limb darkening: ExoCTK, ATLAS9, TESS band, Teff 6265 K, log g 4.11,
@@ -170,6 +172,70 @@ def compare(csv=ARCHIVE_CSV, output="wasp-12b_assignment1_taskF_comparison.png",
     return summary
 
 
+def period_history(csv=ARCHIVE_CSV, output="wasp-12b_assignment1_taskF_period.png"):
+    """Plots every archive period with an error bar against its publication
+    date, as the difference from the newest value, with a weighted linear fit."""
+    import pandas as pd
+
+    data = pd.read_csv(csv)
+    data["ref"] = data["pl_refname"].str.replace(r"<[^>]+>", "", regex=True).str.strip()
+    data["ref"] = data["ref"].str.replace("&amp;", "&").str.replace("&Ouml;", "Ö").str.replace("&uuml;", "ü")
+    data = data[data["pl_orbper"].notna() & data["pl_orbpererr1"].notna()].copy()
+    date = pd.to_datetime(data["pl_pubdate"])
+    data["year"] = date.dt.year + (date.dt.month - 0.5) / 12
+    newest = data.iloc[-1]
+    data["dp"] = (data["pl_orbper"] - newest["pl_orbper"]) * 86400          # seconds
+    data["err"] = (data["pl_orbpererr1"] - data["pl_orbpererr2"]) / 2 * 86400
+
+    # ExoFOP is the TESS candidate catalogue, a period from one short TESS
+    # baseline. It sits far above every paper, so it is shown but not fitted.
+    catalogue = data["ref"] == "ExoFOP"
+    fit = data[~catalogue]
+    w = 1 / fit["err"] ** 2
+    A = np.vstack([fit["year"] - 2017, np.ones(len(fit))]).T
+    cov = np.linalg.inv(A.T @ (A * w.values[:, None]))
+    slope, intercept = cov @ (A.T @ (w * fit["dp"]))
+    slope_err = np.sqrt(cov[0, 0])
+
+    INK, GREY = "#4a4a4a", "#9a9a9a"
+    fig, ax = plt.subplots(figsize=(10, 6))
+    years = np.linspace(data["year"].min() - 0.5, data["year"].max() + 0.5, 2)
+    ax.plot(years, slope * (years - 2017) + intercept, color=GREY, lw=1, ls="--",
+            label=f"weighted straight-line fit, {slope * 1e3:.0f} ± {slope_err * 1e3:.0f} ms per year")
+    ax.errorbar(fit["year"], fit["dp"], yerr=fit["err"], fmt="o", ms=6, capsize=3,
+                lw=1.5, color=INK)
+    # ExoFOP would squash the papers into the bottom of the plot, so it is
+    # drawn as an arrow at the top edge with its value written next to it.
+    top = 0.7
+    for _, row in data[catalogue].iterrows():
+        ax.plot(row["year"], top - 0.02, marker="^", ms=8, color=INK, mfc="white")
+        ax.annotate(f"{row['ref']} +{row['dp']:.2f} s, off the scale and not fitted\n(period from TESS alone)",
+                    (row["year"], top - 0.02), xytext=(8, -4), textcoords="offset points",
+                    fontsize=7, color=INK, va="top")
+    # labels that would land on a neighbour go below their dot instead
+    below = {"Öztürk & Erdem 2019", "Ivshina & Winn 2022", "Collins et al. 2017"}
+    for _, row in fit.iterrows():
+        dy = -11 if row["ref"] in below else 4
+        ax.annotate(row["ref"], (row["year"], row["dp"]), xytext=(6, dy),
+                    textcoords="offset points", fontsize=7, color=INK)
+    ax.set_ylim(-0.05, top)
+    ax.set_xlim(2008, 2028)
+    ax.xaxis.set_major_locator(plt.MultipleLocator(2))
+    ax.axhline(0, color="black", lw=0.6)
+    ax.set_xlabel("Publication date [year]")
+    ax.set_ylabel(f"Period minus {newest['ref']} [s]")
+    ax.set_title("Each newer paper finds a slightly shorter orbit for WASP-12 b", loc="left")
+    ax.grid(color="#e5e5e5", lw=0.8)
+    ax.set_axisbelow(True)
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    ax.legend(frameon=False, loc="lower left", fontsize=9)
+    fig.tight_layout()
+    fig.savefig(output, dpi=150)
+    return slope, slope_err
+
+
 if __name__ == "__main__":
     transit()
     compare()
+    period_history()
