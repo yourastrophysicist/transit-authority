@@ -35,11 +35,18 @@ R_SUN_PER_AU = 215.032        # solar radii in one AU
 ARCHIVE_CSV = Path(__file__).resolve().parents[3] / "data" / "wasp12b_nasa_archive.csv"
 
 
+DEFAULTS = {"t0": 0.0, "ecc": 0.0, "w": 90.0, "limb_dark": "quadratic"}
+
+
 def transit(params=WASP12B, output="wasp-12b_assignment1_taskF.png",
             title="WASP-12 b (Kokori et al. 2023)"):
-    """Plots the batman light curve for one parameter set and saves it."""
+    """Plots the batman light curve for one parameter set and saves it.
+
+    params needs per, rp, a, inc and u; t0, ecc, w and limb_dark fall back
+    to DEFAULTS. This is what `daneel -i params.yaml -t` calls.
+    """
     p = batman.TransitParams()
-    for key, value in params.items():
+    for key, value in {**DEFAULTS, **params}.items():
         setattr(p, key, value)
     t = np.linspace(-0.1, 0.1, 1000)   # days around mid-transit
     flux = batman.TransitModel(p, t).light_curve(p)

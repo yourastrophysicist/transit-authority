@@ -34,6 +34,28 @@ After installation, you can run daneel from the command line:
 daneel -i <input_file> --transit [--output lightcurve.png]
 ```
 
+### Plotting a transit light curve
+
+```bash
+daneel -i path_to_the_parameters.yaml -t
+```
+
+The `-t` (or `--transit`) flag reads the `transit` section of the YAML file and
+passes it to `daneel.detection.transit.transit`, which builds the light curve
+with batman and saves it to `lc.png` (change it with `-o`). The section needs
+`per`, `rp`, `a`, `inc` and `u`; `t0`, `ecc`, `w` and `limb_dark` default to
+0, 0, 90 and `quadratic`. An optional top-level `planet` key sets the plot title.
+
+```yaml
+planet: WASP-12 b
+transit:
+  per: 1.091419179   # orbital period [days]
+  rp: 0.1178         # planet radius [stellar radii]
+  a: 3.040           # semi-major axis [stellar radii]
+  inc: 83.40         # orbital inclination [deg]
+  u: [0.272, 0.257]  # quadratic limb darkening coefficients
+```
+
 ### Command-line options
 
 - `-i, --input`: Input parameter file (required)
