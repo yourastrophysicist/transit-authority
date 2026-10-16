@@ -1,0 +1,13 @@
+# WASP-12 b, parameters from Kokori et al. 2023 (NASA Exoplanet Archive)
+# limb darkening from ExoCTK, ATLAS9, TESS band
+planet: WASP-12 b
+transit:
+  t0: 0.0            # time of mid-transit [days]
+  per: 1.091419179   # orbital period [days]
+  rp: 0.1178         # planet radius [stellar radii]
+  a: 3.040           # semi-major axis [stellar radii]
+  inc: 83.40         # orbital inclination [deg]
+  ecc: 0.0           # eccentricity
+  w: 90.0            # argument of periastron [deg]
+  u: [0.272, 0.257]  # quadratic limb darkening coefficients [u1, u2]
+  limb_dark: "quadratic"

@@ -43,8 +43,8 @@ daneel -i path_to_the_parameters.yaml -t
 The `-t` (or `--transit`) flag reads the `transit` section of the YAML file and
 passes it to `daneel.detection.transit.transit`, which builds the light curve
 with batman and saves it to `lc.png` (change it with `-o`). The section needs
-`per`, `rp`, `a`, `inc` and `u`; `t0`, `ecc`, `w` and `limb_dark` default to
-0, 0, 90 and `quadratic`. An optional top-level `planet` key sets the plot title.
+`per`, `rp`, `a`, `inc` and `u`, while `t0`, `ecc`, `w` and `limb_dark` default
+to 0, 0, 90 and `quadratic`. An optional top-level `planet` key sets the plot title.
 
 ```yaml
 planet: WASP-12 b
@@ -54,6 +54,15 @@ transit:
   a: 3.040           # semi-major axis [stellar radii]
   inc: 83.40         # orbital inclination [deg]
   u: [0.272, 0.257]  # quadratic limb darkening coefficients
+```
+
+The file `examples/wasp12b_params.yaml` holds the WASP-12 b parameters used in
+Assignment 1. To run it from a folder outside the repository,
+
+```bash
+mkdir ~/run_daneel && cd ~/run_daneel
+cp ~/comp_astro_26/examples/wasp12b_params.yaml params.yaml
+daneel -i params.yaml -t -o wasp-12b_assignment1_taskH.png
 ```
 
 ### Command-line options
